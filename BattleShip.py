@@ -3,19 +3,16 @@ from functools import partial
 import math
 
 class Board:
+    #Initialising both board and board logic
     buttonsObjects = [[None]*10 for _ in range(10)]
-    buttonsClicked = [[None]*10 for _ in range(10)]
+    buttonsClicked = [[False]*10 for _ in range(10)]
     opponentButtonsObjects = [[None]*10 for _ in range(10)]
-    opponentButtonsClicked = [[None]*10 for _ in range(10)]
+    opponentButtonsClicked = [[False]*10 for _ in range(10)]
 
 
     def __init__(self, master):
-        for x in range(0,10):
-            for y in range(0,10):
-                self.buttonsClicked[x][y] = False
         self.setupScreen()
         self.opponentSetup()
-        print(self.buttonsClicked)
 
     #Sets up board with all correct variables
     def setupScreen(self):
@@ -27,13 +24,16 @@ class Board:
 
     #Takes move from player (via the buttons)
     def playMove(self,x,y):
-        #if self.checkMove(x,y):
-        self.buttonsClicked[x][y] = True
-        print(self.buttonsClicked)
+        if self.checkMove(x,y):
+            #Changing colour of button clicked
+            self.buttonsObjects[x][y].config(bg = "#808080")
+            self.buttonsClicked[x][y] = True
+        else:
+            print("Button already pressed")
 
     #Returns validity of a move
     def checkMove(self,x,y):
-        return True
+        return not self.buttonsClicked[x][y]
 
     #Sets up their board by random
     #(making sure no ships overlap)
