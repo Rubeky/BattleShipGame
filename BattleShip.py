@@ -3,6 +3,10 @@ from functools import partial
 import math
 
 class Board:
+    #self root object with exit linked to closing window
+    root = Tk()
+    root.protocol("WM_DELETE_WINDOW", exit)
+
     #Initialising for objects and game logic
     buttonsObjects = [[None]*11 for _ in range(11)]
     buttonsClicked = [[False]*10 for _ in range(10)]
@@ -21,10 +25,13 @@ class Board:
     played = False
 
 
-    def __init__(self, master):
-        self.loading_game = True
+    #Houses main function calls
+    def __init__(self):
+
+        #Sets up all objects
         self.setupScreen()
-        #placing ships is done in a loop
+
+        #Placing ships is done in a loop
         while self.loading_game:
             pass
 
@@ -33,6 +40,7 @@ class Board:
 
         #Game loop
         while not self.isComplete():
+
             #Waiting for player to do move
             while(not self.played):
                 self.played = False
@@ -44,22 +52,27 @@ class Board:
 
     #Sets up board with all correct variables
     def setupScreen(self):
-        frame1 = Frame(root)
+        #What we play on
+        frame1 = Frame(self.root)
         frame1.grid(row = 1, column = 1)
 
-        frame2 = Frame(root, width = 50)
+        #Spacer
+        frame2 = Frame(self.root, width = 50)
         frame2.grid(row = 1, column = 2)
 
-        frame3 = Frame(root)
+        #What the opponent plays on
+        frame3 = Frame(self.root)
         frame3.grid(row = 1, column = 3)
 
-        frame4 = Frame(root, height = 10)
+        #Spacer
+        frame4 = Frame(self.root, height = 10)
         frame4.grid(row = 2, column = 1)
 
-        self.textBox = Label(root, bg = "#808080", text = "Hello", width = 50, height = 10)
+        #TextBox that displays last thing that happened
+        self.textBox = Label(self.root, bg = "#808080", text = "Hello", width = 50, height = 10)
         self.textBox.grid(row = 3, column = 1)
 
-        self.exitButton = Button(root, bg = "Red", text = "Abort", command = lambda:self.exit_window())
+        self.exitButton = Button(self.root, bg = "Red", text = "Abort", command = lambda:exit())
         self.exitButton.grid(row = 3, column = 2)
 
 
@@ -83,7 +96,7 @@ class Board:
             self.opponentButtonsObjects[0][i + 1].config(text = textList[i], width = 5, height = 3)
             self.opponentButtonsObjects[0][i + 1].grid(row = i + 1, column = 0)
 
-        #Creating all button objects in a grid
+        #Creating all button objects in both grids
         for x in range(1,11):
             for y in range(1,11):
                 self.buttonsObjects[x][y] = Button(frame1, command = partial(self.playMove,x,y))
@@ -95,11 +108,10 @@ class Board:
                 self.opponentButtonsObjects[x][y].config(textvariable = " ", width = 5, height = 3)
                 self.opponentButtonsObjects[x][y].grid(row = y, column = x)
 
-        root.mainloop()
+        self.root.mainloop()
 
 
     #Takes boat placement from the player
-    #TODO: make boat placement work
     def placeShips(self, x, y):
         self.boatPlacedButton = True
 
@@ -166,10 +178,4 @@ class Board:
     def isComplete(self):
         pass
 
-    #deletes instance of game
-    def exit_window(self):
-        root.destroy()
-        exit()
-
-root = Tk()
-gameBoard = Board(root)
+gameBoard = Board()
