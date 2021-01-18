@@ -16,10 +16,15 @@ class Board:
     exitButton = None
 
     #Ship placement variables
-    ships = [2, 2, 3, 4, 5] #Edit this to change length of game/types of ships in play
+    ships = [] #Edit this to change length of game/types of ships in play
     loading_game = True
-    boatPlacedButton = False
+    isBoatComplete = True
     currentBoatToPlace = 0
+    x = None
+    y = None
+    #Boat location data hold pointers to each
+    shipsLocations = [[False]*11 for i in range(11)]
+    enemyLocations = [[False]*11 for i in range(11)]
 
     #Used while game is running
     played = False
@@ -28,27 +33,16 @@ class Board:
     #Houses main function calls
     def __init__(self):
 
+        self.ships = [2, 2, 3, 4, 5]
         #Sets up all objects
         self.setupScreen()
+
+        print("Made it")
 
         #Placing ships is done in a loop
         while self.loading_game:
             pass
 
-        #Placing all opponent ships
-        self.opponentPlaceShips()
-
-        #Game loop
-        while not self.isComplete():
-
-            #Waiting for player to do move
-            while(not self.played):
-                self.played = False
-
-            #Have opponent play move
-            self.opponentMove()
-
-        #Winning screen?
 
     #Sets up board with all correct variables
     def setupScreen(self):
@@ -99,11 +93,12 @@ class Board:
         #Creating all button objects in both grids
         for x in range(1,11):
             for y in range(1,11):
+                #Right grid, used for playing moves
                 self.buttonsObjects[x][y] = Button(frame1, command = partial(self.playMove,x,y))
                 self.buttonsObjects[x][y].config(textvariable = " ", width = 5, height = 3)
                 self.buttonsObjects[x][y].grid(row = x, column = y)
 
-
+                #Left grid, used for setting up boats
                 self.opponentButtonsObjects[x][y] = Button(frame3, command = partial(self.placeShips,x,y))
                 self.opponentButtonsObjects[x][y].config(textvariable = " ", width = 5, height = 3)
                 self.opponentButtonsObjects[x][y].grid(row = y, column = x)
@@ -112,26 +107,100 @@ class Board:
 
 
     #Takes boat placement from the player
+    ## TODO: Make checks for if boats overlap
     def placeShips(self, x, y):
-        self.boatPlacedButton = True
 
+        #Variables for making sure the placement works
+        ShipX  = []
+        ShipY  = []
+        crossesOver = False
+
+        #Exit function immediately
+        if not self.loading_game:
+            #Exit function
+            return None
+
+        #The final run of this function, sets up rest of game
+        if self.currentBoatToPlace == len(self.ships):
+
+            #Locks you out of function
+            self.loading_game = False
+            self.textBox.config(text = "The game has started!")
+
+            #Set up opponent ships
+            self.opponentPlaceShips()
+            return None
+
+        #Clearing textbox
+        self.textBox.config(text = "")
         #Changing colour of button clicked
-        self.opponentButtonsObjects[x][y].config(bg = "#C0C0C0")
+        if self.shipsLocations[x][y] == False:
+            self.opponentButtonsObjects[x][y].config(bg = "#C0C0C0")
 
-        '''
-        If isBoatComplete = true
-            #If currentBoatToPlace == self.ships.length()
-                #self.loading_game = False
-                #return None
-            #currentBoatToPlace++
-            #check if x and y are free and place
-        #else
-            #check if it's the correct distance away:
-                place ship
-            if not correct distance:
-                self.textBox.config(text = ("You're looking for a place that is " + self.ships[currentBoatToPlace] + " away"))
-        '''
+        #Finding first position of the boat
+        if self.isBoatComplete:
+            if self.shipsLocations[x][y] == False:
+                self.isBoatComplete = False
 
+                #Set first position of ship
+                self.x = x
+                self.y = y
+
+        #Checking against length, and setting them to be placed if suitable
+        elif self.shipsLocations[x][y] == False:
+            if x - self.x == self.ships[self.currentBoatToPlace] - 1 and y == self.y:
+                for i in range(0, self.ships[self.currentBoatToPlace]):
+                    if not self.shipsLocations[self.x + i][y]:
+                        ShipX.append(self.x + i)
+                        ShipY.append(y)
+                    else:
+                        crossesOver = True
+
+            elif y - self.y == self.ships[self.currentBoatToPlace] - 1 and x == self.x:
+                for i in range(0, self.ships[self.currentBoatToPlace]):
+                    if not self.shipsLocations[x][self.y + i]:
+                        ShipX.append(x)
+                        ShipY.append(self.y + i)
+                    else:
+                        crossesOver = True
+
+            elif x - self.x == -self.ships[self.currentBoatToPlace] + 1 and y == self.y:
+                for i in range(0, self.ships[self.currentBoatToPlace]):
+                    if not self.shipsLocations[self.x - i][y]:
+                        ShipX.append(self.x - i)
+                        ShipY.append(y)
+                    else:
+                        crossesOver = True
+
+            elif y - self.y == -self.ships[self.currentBoatToPlace] + 1 and x == self.x:
+                for i in range(0, self.ships[self.currentBoatToPlace]):
+                    if not self.shipsLocations[x][self.y - i]:
+                        ShipX.append(x)
+                        ShipY.append(self.y - i)
+                    else:
+                        crossesOver = True
+
+            #Stops boats that havent been placed properly based on boat length
+            else:
+                self.textBox.config(text = ("You're looking for a place that is " + str(self.ships[self.currentBoatToPlace]) + " away"))
+                self.opponentButtonsObjects[x][y].config(bg = "#FFFFFF")
+                self.opponentButtonsObjects[self.x][self.y].config(bg = "#FFFFFF")
+                self.currentBoatToPlace -= 1
+
+            #Places boat in if it hasn't crossed over another
+            if not crossesOver:
+                for i in range(0, len(ShipX)):
+                    self.shipsLocations[ShipX[i]][ShipY[i]] = True
+                    self.opponentButtonsObjects[ShipX[i]][ShipY[i]].config(bg = "green")
+            else:
+                self.textBox.config(text = ("Please don't overlap boats!"))
+                self.opponentButtonsObjects[x][y].config(bg = "#FFFFFF")
+                self.opponentButtonsObjects[self.x][self.y].config(bg = "#FFFFFF")
+                self.currentBoatToPlace -= 1
+
+            #Getting to next boat
+            self.isBoatComplete = True
+            self.currentBoatToPlace += 1
 
 
     #Takes move from player (via the buttons)
@@ -144,6 +213,9 @@ class Board:
             #TODO: Check if it hits etc
         else:
             self.textBox.config(text = "You already pressed this")
+
+        #Opponent plays move
+        self.opponentMove()
 
     #Sets up their board by random
     #(making sure no ships overlap)
