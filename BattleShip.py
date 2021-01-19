@@ -1,6 +1,13 @@
 from tkinter import Tk, Label, Button, Frame
 from functools import partial
 import math
+import random
+
+'''
+################################################################################
+#############################Start of Board#####################################
+################################################################################
+'''
 
 class Board:
     #self root object with exit linked to closing window
@@ -8,32 +15,28 @@ class Board:
     root.protocol("WM_DELETE_WINDOW", exit)
 
     #Initialising for objects and game logic
-    buttonsObjects = [[None]*11 for _ in range(11)]
-    buttonsClicked = [[False]*10 for _ in range(10)]
-    opponentButtonsObjects = [[None]*11 for _ in range(11)]
+    buttonsObjects = [[None]*10 for _ in range(10)]             #List of the objects
+    buttonsClicked = [[False]*10 for _ in range(10)]            #If they've been clicked or not
+    opponentButtonsObjects = [[None]*10 for _ in range(10)]
     opponentButtonsClicked = [[False]*10 for _ in range(10)]
     textBox = None
     exitButton = None
 
     #Ship placement variables
-    ships = [] #Edit this to change length of game/types of ships in play
+    ships = [2, 2, 3, 4, 5] #Edit this to change length of game/types of ships in play
     loading_game = True
     isBoatComplete = True
     currentBoatToPlace = 0
     x = None
     y = None
     #Boat location data hold pointers to each
-    shipsLocations = [[False]*11 for i in range(11)]
-    enemyLocations = [[False]*11 for i in range(11)]
-
-    #Used while game is running
-    played = False
+    shipsLocations = [[False]*10 for _ in range(10)]
+    enemyLocations = [[False]*10 for _ in range(10)]
 
 
     #Houses main function calls
     def __init__(self):
 
-        self.ships = [2, 2, 3, 4, 5]
         #Sets up all objects
         self.setupScreen()
 
@@ -42,6 +45,10 @@ class Board:
         #Placing ships is done in a loop
         while self.loading_game:
             pass
+
+
+################################################################################
+################################################################################
 
 
     #Sets up board with all correct variables
@@ -72,38 +79,47 @@ class Board:
 
         textList = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
+        labels1 = [None]*11
+        labels2 = [None]*11
+        opponentLabels1 = [None]*11
+        opponentLabels2 = [None]*11
+
         #Setting up borders of the boards, with the alphabet and the numbering
         for i in range(0,10):
-            self.buttonsObjects[i + 1][0] = Button(frame1)
-            self.buttonsObjects[i + 1][0].config(text = str(i + 1), width = 5, height = 3)
-            self.buttonsObjects[i + 1][0].grid(row = 0, column = i + 1)
+            labels1[i + 1] = Button(frame1)
+            labels1[i + 1].config(text = str(i + 1), width = 5, height = 3)
+            labels1[i + 1].grid(row = 0, column = i + 1)
 
-            self.buttonsObjects[0][i + 1] = Button(frame1)
-            self.buttonsObjects[0][i + 1].config(text = textList[i], width = 5, height = 3)
-            self.buttonsObjects[0][i + 1].grid(row = i + 1, column = 0)
+            labels2[i + 1] = Button(frame1)
+            labels2[i + 1].config(text = textList[i], width = 5, height = 3)
+            labels2[i + 1].grid(row = i + 1, column = 0)
 
-            self.opponentButtonsObjects[i + 1][0] = Button(frame3)
-            self.opponentButtonsObjects[i + 1][0].config(text = str(i + 1), width = 5, height = 3)
-            self.opponentButtonsObjects[i + 1][0].grid(row = 0, column = i + 1)
+            opponentLabels1[i + 1] = Button(frame3)
+            opponentLabels1[i + 1].config(text = str(i + 1), width = 5, height = 3)
+            opponentLabels1[i + 1].grid(row = 0, column = i + 1)
 
-            self.opponentButtonsObjects[0][i + 1] = Button(frame3)
-            self.opponentButtonsObjects[0][i + 1].config(text = textList[i], width = 5, height = 3)
-            self.opponentButtonsObjects[0][i + 1].grid(row = i + 1, column = 0)
+            opponentLabels2[i + 1] = Button(frame3)
+            opponentLabels2[i + 1].config(text = textList[i], width = 5, height = 3)
+            opponentLabels2[i + 1].grid(row = i + 1, column = 0)
 
         #Creating all button objects in both grids
-        for x in range(1,11):
-            for y in range(1,11):
+        for x in range(0,10):
+            for y in range(0,10):
                 #Right grid, used for playing moves
                 self.buttonsObjects[x][y] = Button(frame1, command = partial(self.playMove,x,y))
                 self.buttonsObjects[x][y].config(textvariable = " ", width = 5, height = 3)
-                self.buttonsObjects[x][y].grid(row = x, column = y)
+                self.buttonsObjects[x][y].grid(row = x + 1, column = y + 1)
 
                 #Left grid, used for setting up boats
                 self.opponentButtonsObjects[x][y] = Button(frame3, command = partial(self.placeShips,x,y))
                 self.opponentButtonsObjects[x][y].config(textvariable = " ", width = 5, height = 3)
-                self.opponentButtonsObjects[x][y].grid(row = y, column = x)
+                self.opponentButtonsObjects[x][y].grid(row = y + 1, column = x + 1)
 
         self.root.mainloop()
+
+
+################################################################################
+################################################################################
 
 
     #Takes boat placement from the player
@@ -203,8 +219,81 @@ class Board:
             self.currentBoatToPlace += 1
 
 
+################################################################################
+################################################################################
+
+
+    #Sets up their board by random
+    def opponentPlaceShips(self):
+        #Variables for making sure the placement works
+        whichShip = 0
+        isImpossible = 0
+
+        while whichShip < len(self.ships) and isImpossible < 5000:
+            ShipX  = []
+            ShipY  = []
+            crossesOver = False
+
+            #Generate random number
+            randNumb = random.randint(1,2)
+
+            if randNumb == 1:           #Horizontal
+                x = random.randint(0,9 - self.ships[whichShip])
+                y = random.randint(0,9)
+
+                for i in range(0, self.ships[whichShip]):
+                    if not self.enemyLocations[x + i][y]:
+                        ShipX.append(x + i)
+                        ShipY.append(y)
+                    else:
+                        crossesOver = True
+
+            else:         #Vertical
+                x = random.randint(0,9)
+                y = random.randint(0,9 - self.ships[whichShip])
+
+                for i in range(0, self.ships[whichShip]):
+                    if not self.enemyLocations[x][y + i]:
+                        ShipX.append(x)
+                        ShipY.append(y + i)
+                    else:
+                        crossesOver = True
+
+            #Places boat in if it hasn't crossed over another
+            if not crossesOver:
+                for i in range(0, len(ShipX)):
+                    self.enemyLocations[ShipX[i]][ShipY[i]] = True
+                    self.buttonsObjects[ShipX[i]][ShipY[i]].config(bg = "#A00000")
+            else:
+                self.textBox.config(text = ("Please don't overlap boats!"))
+
+                whichShip -= 1
+                isImpossible += 1
+
+            #Getting to next boat
+            self.isBoatComplete = True
+            whichShip += 1
+
+
+################################################################################
+################################################################################
+
+
     #Takes move from player (via the buttons)
     def playMove(self, x, y):
+        return None
+
+        '''Pseudocode
+        if not self.buttonsClicked[x-1][y-1]:
+            change colour of button
+            set them as clicked
+            if self.opponentPlaceShips[x][y]:
+                mark it as hit?
+                set text to reflect that it was hit
+                maybe say how many ships are left?
+                if sunk, say ship sunk!
+        '''
+        '''Previous function
         self.boatPlacedButton = True
         if not self.buttonsClicked[x-1][y-1]:
             #Changing colour of button clicked
@@ -216,23 +305,12 @@ class Board:
 
         #Opponent plays move
         self.opponentMove()
+        '''
 
-    #Sets up their board by random
-    #(making sure no ships overlap)
-    def opponentPlaceShips(self):
-        '''
-        while shipsPlaced < self.ships():
-            generate random x and y
-            if available:
-                generate random (n, w, e, or s)
-                if it doesnt interfere with other ship:
-                    place ship in (all parts)
-                    #colour board red for testing purposes
-                else:
-                    delete whole ship
-            else:
-                delete whole ship
-        '''
+
+################################################################################
+################################################################################
+
 
     #Does a random move for the opponent or if a ship
     # has been hit, this triggers an algorithm
@@ -246,8 +324,18 @@ class Board:
 
         '''
 
+################################################################################
+################################################################################
+
     #Returns state of the game
     def isComplete(self):
         pass
 
+'''
+################################################################################
+##############################End of Board######################################
+################################################################################
+'''
+
+#Not within Class Board
 gameBoard = Board()
