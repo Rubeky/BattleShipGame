@@ -17,8 +17,8 @@ class Board:
     #Initialising for objects and game logic
     buttonsObjects = [[None]*10 for _ in range(10)]             #List of the objects
     buttonsClicked = [[False]*10 for _ in range(10)]            #If they've been clicked or not
-    opponentButtonsObjects = [[None]*10 for _ in range(10)]
-    opponentButtonsClicked = [[False]*10 for _ in range(10)]
+    oppositeButtonsObjects = [[None]*10 for _ in range(10)]
+    oppositeButtonsClicked = [[False]*10 for _ in range(10)]
     textBox = None
     exitButton = None
 
@@ -29,23 +29,18 @@ class Board:
     currentBoatToPlace = 0
     x = None
     y = None
-    #Boat location data hold pointers to each
+    #Boat location data , true is the location of part of a boat
     shipsLocations = [[False]*10 for _ in range(10)]
     enemyLocations = [[False]*10 for _ in range(10)]
 
+    playerHits = 0
+    opponentHits = 0
+    gameOver = False
 
     #Houses main function calls
     def __init__(self):
-
         #Sets up all objects
         self.setupScreen()
-
-        print("Made it")
-
-        #Placing ships is done in a loop
-        while self.loading_game:
-            pass
-
 
 ################################################################################
 ################################################################################
@@ -74,7 +69,7 @@ class Board:
         self.textBox.grid(row = 3, column = 1)
 
         self.exitButton = Button(self.root, bg = "Red", text = "Abort", command = lambda:exit())
-        self.exitButton.grid(row = 3, column = 2)
+        self.exitButton.grid(row = 3, column = 3)
 
 
         textList = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
@@ -111,9 +106,9 @@ class Board:
                 self.buttonsObjects[x][y].grid(row = x + 1, column = y + 1)
 
                 #Left grid, used for setting up boats
-                self.opponentButtonsObjects[x][y] = Button(frame3, command = partial(self.placeShips,x,y))
-                self.opponentButtonsObjects[x][y].config(textvariable = " ", width = 5, height = 3)
-                self.opponentButtonsObjects[x][y].grid(row = y + 1, column = x + 1)
+                self.oppositeButtonsObjects[x][y] = Button(frame3, command = partial(self.placeShips,x,y))
+                self.oppositeButtonsObjects[x][y].config(textvariable = " ", width = 5, height = 3)
+                self.oppositeButtonsObjects[x][y].grid(row = y + 1, column = x + 1)
 
         self.root.mainloop()
 
@@ -151,7 +146,7 @@ class Board:
         self.textBox.config(text = "")
         #Changing colour of button clicked
         if self.shipsLocations[x][y] == False:
-            self.opponentButtonsObjects[x][y].config(bg = "#C0C0C0")
+            self.oppositeButtonsObjects[x][y].config(bg = "#C0C0C0")
 
         #Finding first position of the boat
         if self.isBoatComplete:
@@ -199,19 +194,19 @@ class Board:
             #Stops boats that havent been placed properly based on boat length
             else:
                 self.textBox.config(text = ("You're looking for a place that is " + str(self.ships[self.currentBoatToPlace]) + " away"))
-                self.opponentButtonsObjects[x][y].config(bg = "#FFFFFF")
-                self.opponentButtonsObjects[self.x][self.y].config(bg = "#FFFFFF")
+                self.oppositeButtonsObjects[x][y].config(bg = "SystemButtonFace")
+                self.oppositeButtonsObjects[self.x][self.y].config(bg = "SystemButtonFace")
                 self.currentBoatToPlace -= 1
 
             #Places boat in if it hasn't crossed over another
             if not crossesOver:
                 for i in range(0, len(ShipX)):
                     self.shipsLocations[ShipX[i]][ShipY[i]] = True
-                    self.opponentButtonsObjects[ShipX[i]][ShipY[i]].config(bg = "green")
+                    self.oppositeButtonsObjects[ShipX[i]][ShipY[i]].config(bg = "green")
             else:
                 self.textBox.config(text = ("Please don't overlap boats!"))
-                self.opponentButtonsObjects[x][y].config(bg = "#FFFFFF")
-                self.opponentButtonsObjects[self.x][self.y].config(bg = "#FFFFFF")
+                self.oppositeButtonsObjects[x][y].config(bg = "SystemButtonFace")
+                self.oppositeButtonsObjects[self.x][self.y].config(bg = "SystemButtonFace")
                 self.currentBoatToPlace -= 1
 
             #Getting to next boat
@@ -226,10 +221,10 @@ class Board:
     #Sets up their board by random
     def opponentPlaceShips(self):
         #Variables for making sure the placement works
-        whichShip = 0
+        currentBoatToPlace = 0
         isImpossible = 0
 
-        while whichShip < len(self.ships) and isImpossible < 5000:
+        while currentBoatToPlace < len(self.ships) and isImpossible < 5000:
             ShipX  = []
             ShipY  = []
             crossesOver = False
@@ -238,21 +233,21 @@ class Board:
             randNumb = random.randint(1,2)
 
             if randNumb == 1:           #Horizontal
-                x = random.randint(0,9 - self.ships[whichShip])
+                x = random.randint(0,9 - self.ships[currentBoatToPlace] + 1)
                 y = random.randint(0,9)
 
-                for i in range(0, self.ships[whichShip]):
+                for i in range(0, self.ships[currentBoatToPlace]):
                     if not self.enemyLocations[x + i][y]:
                         ShipX.append(x + i)
                         ShipY.append(y)
                     else:
                         crossesOver = True
 
-            else:         #Vertical
+            else:                       #Vertical
                 x = random.randint(0,9)
-                y = random.randint(0,9 - self.ships[whichShip])
+                y = random.randint(0,9 - self.ships[currentBoatToPlace] + 1)
 
-                for i in range(0, self.ships[whichShip]):
+                for i in range(0, self.ships[currentBoatToPlace]):
                     if not self.enemyLocations[x][y + i]:
                         ShipX.append(x)
                         ShipY.append(y + i)
@@ -263,16 +258,16 @@ class Board:
             if not crossesOver:
                 for i in range(0, len(ShipX)):
                     self.enemyLocations[ShipX[i]][ShipY[i]] = True
-                    self.buttonsObjects[ShipX[i]][ShipY[i]].config(bg = "#A00000")
-            else:
-                self.textBox.config(text = ("Please don't overlap boats!"))
 
-                whichShip -= 1
+                    #For debugging
+                    #self.buttonsObjects[ShipX[i]][ShipY[i]].config(bg = "#A00000")
+            else:
+                currentBoatToPlace -= 1
                 isImpossible += 1
 
             #Getting to next boat
             self.isBoatComplete = True
-            whichShip += 1
+            currentBoatToPlace += 1
 
 
 ################################################################################
@@ -281,55 +276,72 @@ class Board:
 
     #Takes move from player (via the buttons)
     def playMove(self, x, y):
-        return None
-
-        '''Pseudocode
-        if not self.buttonsClicked[x-1][y-1]:
-            change colour of button
-            set them as clicked
-            if self.opponentPlaceShips[x][y]:
-                mark it as hit?
-                set text to reflect that it was hit
-                maybe say how many ships are left?
-                if sunk, say ship sunk!
-        '''
-        '''Previous function
-        self.boatPlacedButton = True
-        if not self.buttonsClicked[x-1][y-1]:
-            #Changing colour of button clicked
-            self.buttonsObjects[x][y].config(bg = "#808080")
+        if not self.gameOver:
+            self.textBox.config(text = "")
             self.buttonsClicked[x-1][y-1] = True
-            #TODO: Check if it hits etc
-        else:
-            self.textBox.config(text = "You already pressed this")
+            self.buttonsObjects[x][y].config(bg = "#808080")
 
-        #Opponent plays move
-        self.opponentMove()
-        '''
+            if self.enemyLocations[x][y]:
+                self.buttonsObjects[x][y].config(bg = "Red")
+                self.textBox.config(text = "Enemy hit!")
+                self.playerHits += 1
 
+
+            self.opponentMove()
+
+        if self.whoWon() == 1:
+            self.textBox.config(text = "Congratulations, you won!")
 
 ################################################################################
 ################################################################################
 
 
-    #Does a random move for the opponent or if a ship
-    # has been hit, this triggers an algorithm
+    #Plays opponent moves
+    #if no hits made: random movements
+    #if one hit made: try sink ship **TODO**
     def opponentMove(self):
-        '''
-        if not currentTarget:
-            random x and y
-        else:
-            try north, south, east, west depending on hits
-            (use a stack??)
+        noMoveMade = True
 
-        '''
+        while noMoveMade:
+            x = random.randint(0,9)
+            y = random.randint(0,9)
+
+            if not self.oppositeButtonsClicked[x][y]:
+                noMoveMade = False
+                self.oppositeButtonsClicked[x][y] = True
+
+                if self.shipsLocations[x][y]:
+                    self.textBox.config(text = "Enemy hit your boat!")
+                    self.opponentHits += 1
+
+
+        if self.whoWon() == 2:
+            self.textBox.config(text = "Oh no, all your ships were sunk!")
+
+
 
 ################################################################################
 ################################################################################
+
 
     #Returns state of the game
-    def isComplete(self):
-        pass
+    #0 = not won yet
+    #1 = player won
+    #2 = opponent won
+    def whoWon(self):
+        numberOfTilesToHit = sum(self.ships)
+
+        self.textBox.config(text = str(self.opponentHits) + " " + str(self.playerHits))
+
+        if self.opponentHits == numberOfTilesToHit:
+            self.gameOver = True
+            return 2
+        elif self.playerHits == numberOfTilesToHit:
+            self.gameOver = True
+            return 1
+        else:
+            return 0
+
 
 '''
 ################################################################################
